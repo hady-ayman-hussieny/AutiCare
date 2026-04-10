@@ -31,29 +31,23 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // ── Database ────────────────────────────
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-// Railway DATABASE_URL support
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+string connectionString;
+
 if (!string.IsNullOrEmpty(databaseUrl))
 {
+    Console.WriteLine("🔥 Using Railway DB");
     connectionString = ParseDatabaseUrl(databaseUrl);
+}
+else
+{
+    Console.WriteLine("⚠️ Using Local DB");
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 }
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, b => b.MigrationsAssembly("AutiCare.Infrastructure")));
-
-// ── Identity ────────────────────────────
-builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
-
 // ── JWT ─────────────────────────────────
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
