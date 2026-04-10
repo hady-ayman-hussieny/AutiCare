@@ -31,20 +31,20 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // ── Database ────────────────────────────
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+               ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-string connectionString;
-
-if (!string.IsNullOrEmpty(databaseUrl))
+if (databaseUrl!.StartsWith("postgresql://") || databaseUrl.StartsWith("postgres://"))
 {
     Console.WriteLine("🔥 Using Railway DB");
-    connectionString = ParseDatabaseUrl(databaseUrl);
+    databaseUrl = ParseDatabaseUrl(databaseUrl);
 }
 else
 {
-    Console.WriteLine("⚠️ Using Local DB");
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    Console.WriteLine("✅ Using Connection String");
 }
+
+string connectionString = databaseUrl!;
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, b => b.MigrationsAssembly("AutiCare.Infrastructure")));
