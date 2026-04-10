@@ -206,9 +206,16 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<ExceptionMiddleware>();
 
 // Port adjustment for Railway
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Add($"http://*:{port}");
 
+
+var port = Environment.GetEnvironmentVariable("PORT");
+
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://*:{port}");
+}
+
+//var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

@@ -25,10 +25,10 @@ public class ChildService : IChildService
             ParentId = parent.ParentId,
             FirstName = request.FirstName,
             LastName = request.LastName,
-            DateOfBirth = request.DateOfBirth,
+            DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth, DateTimeKind.Utc),
             Gender = request.Gender,
             MedicalHistory = request.MedicalHistory
-        };
+        }; 
 
         await _childRepo.AddAsync(child);
         await _childRepo.SaveChangesAsync();
