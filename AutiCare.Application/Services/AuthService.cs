@@ -83,8 +83,27 @@ public class AuthService : IAuthService
         var token = _jwtService.GenerateToken(createdUser!);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
-        return new AuthResponse(token, refreshToken, user.Id.ToString(),
-            user.FullName, user.Email!, request.Role, DateTime.UtcNow.AddMinutes(15));
+        var emailVerificationToken =
+            await _userManager.GenerateEmailConfirmationTokenAsync(createdUser);
+
+        Console.WriteLine("VERIFY TOKEN:");
+        Console.WriteLine(emailVerificationToken);
+
+        await _emailService.SendEmailAsync(
+            createdUser.Email!,
+            "Verify your email",
+            $"Use this token to verify your email:\n\n{emailVerificationToken}"
+        );
+
+        return new AuthResponse(
+            token,
+            refreshToken,
+            createdUser.Id.ToString(),
+            createdUser.FullName,
+            createdUser.Email!,
+            request.Role,
+            DateTime.UtcNow.AddMinutes(15)
+        );
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -154,7 +173,12 @@ public class AuthService : IAuthService
             ?? throw new UnauthorizedAccessException("User not found");
 
         var result = await _userManager.ConfirmEmailAsync(user, request.Token);
+
         if (!result.Succeeded)
-            throw new InvalidOperationException("Failed to verify email");
+        {
+            throw new InvalidOperationException(
+                string.Join(", ", result.Errors.Select(e => e.Description))
+            );
+        }
     }
 }
