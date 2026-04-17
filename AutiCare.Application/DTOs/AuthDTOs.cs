@@ -23,7 +23,8 @@ public record AuthResponse(
     string FullName,
     string Email,
     string Role,
-    DateTime ExpiresAt
+    DateTime ExpiresAt,
+    string? VerificationToken = null
 );
 
 public record RefreshTokenRequest(string Token, string RefreshToken);

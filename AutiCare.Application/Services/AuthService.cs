@@ -93,8 +93,8 @@ public class AuthService : IAuthService
             var emailVerificationToken = await _userManager.GenerateEmailConfirmationTokenAsync(createdUser);
             var safeToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(emailVerificationToken));
 
-            Console.WriteLine("VERIFY TOKEN:");
-            Console.WriteLine(safeToken);
+            //Console.WriteLine("VERIFY TOKEN:");
+            //Console.WriteLine(safeToken);
 
             try
             {
@@ -109,14 +109,15 @@ public class AuthService : IAuthService
             }
 
             return new AuthResponse(
-                token,
-                refreshToken,
-                createdUser.Id.ToString(),
-                createdUser.FullName,
-                createdUser.Email!,
-                             request.Role,
-                DateTime.UtcNow.AddMinutes(15)
-            );
+    token,
+    refreshToken,
+    createdUser.Id.ToString(),
+    createdUser.FullName,
+    createdUser.Email!,
+    request.Role,
+    DateTime.UtcNow.AddMinutes(15),
+    safeToken
+);
         }
         catch (Exception)
         {
