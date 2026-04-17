@@ -62,8 +62,30 @@ public class JwtService : IJwtService
 
     public string? ValidateRefreshToken(string token)
     {
-        // In production: validate against stored refresh tokens in DB/Redis
-        // For now return null to force re-login
+        // Refresh token validation is handled directly via UserManager in AuthService
         return null;
+    }
+
+    public ClaimsPrincipal GetPrincipalFromToken(string token)
+    {
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidateIssuer = true,
+            ValidIssuer = _settings.Issuer,
+            ValidAudience = _settings.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret)),
+            ValidateLifetime = false // Ignore expiration since we are refreshing
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+        
+        var jwtSecurityToken = securityToken as JwtSecurityToken;
+        if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            throw new SecurityTokenException("Invalid token");
+
+        return principal;
     }
 }

@@ -52,10 +52,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // ── Identity ────────────────────────────
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
+    // Password
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 6;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
+
+    // Username / Email
+    options.User.RequireUniqueEmail = true;
+    options.User.AllowedUserNameCharacters =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
