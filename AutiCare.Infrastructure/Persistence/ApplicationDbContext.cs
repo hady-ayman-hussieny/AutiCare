@@ -20,6 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<ParentTest> ParentTests => Set<ParentTest>();
     public DbSet<ParentAnswer> ParentAnswers => Set<ParentAnswer>();
     public DbSet<AIResult> AIResults => Set<AIResult>();
+    public DbSet<PredictionResult> PredictionResults => Set<PredictionResult>();
     public DbSet<Chat> Chats => Set<Chat>();
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -38,6 +39,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         // Table names matching SQL script
         builder.Entity<Specialist>().ToTable("Specialist");
         builder.Entity<AIResult>().ToTable("AIResults");
+        builder.Entity<PredictionResult>().ToTable("PredictionResults");
         builder.Entity<AIQuestion>().ToTable("AIQuestions");
         builder.Entity<ParentTest>().ToTable("ParentTest");
         builder.Entity<ParentAnswer>().ToTable("ParentAnswers");
@@ -56,6 +58,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         builder.Entity<Child>()
             .HasOne(c => c.Parent).WithMany(p => p.Children)
             .HasForeignKey(c => c.ParentId).OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<PredictionResult>()
+            .HasOne(pr => pr.Child)
+            .WithMany()
+            .HasForeignKey(pr => pr.ChildId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<TreatmentPlan>()
             .HasOne(tp => tp.Child).WithMany(c => c.TreatmentPlans)

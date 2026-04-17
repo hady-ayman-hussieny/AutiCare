@@ -13,6 +13,8 @@ public class Child
     public DateTime DateOfBirth { get; set; }
     public string Gender { get; set; } = string.Empty;
     public string? MedicalHistory { get; set; }
+    public bool Jaundice { get; set; } = false;
+    public bool FamilyAsd { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }

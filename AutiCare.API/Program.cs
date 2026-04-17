@@ -127,6 +127,8 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<INotesService, NotesService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IAiClientProvider, MockAiClientProvider>();
+builder.Services.AddScoped<IScreeningService, ScreeningService>();
 
 // ── AutoMapper ─────────────────────────
 builder.Services.AddAutoMapper(typeof(MappingProfile));
