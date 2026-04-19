@@ -24,4 +24,5 @@ public class Child
     public ICollection<TreatmentPlan> TreatmentPlans { get; set; } = new List<TreatmentPlan>();
     public ICollection<ParentTest> ParentTests { get; set; } = new List<ParentTest>();
     public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+    public ICollection<PredictionResult> PredictionResults { get; set; } = new List<PredictionResult>();
 }

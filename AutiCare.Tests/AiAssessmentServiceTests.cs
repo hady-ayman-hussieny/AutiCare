@@ -1,72 +1,69 @@
+using AutiCare.Application.DTOs;
 using AutiCare.Application.Services;
-using System;
 using System.Collections.Generic;
 using Xunit;
 
 namespace AutiCare.Tests;
 
-public class AiAssessmentServiceTests
+public class ScreeningServiceTests
 {
-    private readonly AiAssessmentService _service;
-
-    public AiAssessmentServiceTests()
+    [Fact]
+    public void GetQuestions_Returns10Questions()
     {
-        _service = new AiAssessmentService();
+        // The questions are static — we can test by creating a real instance
+        // with null deps (only GetQuestions doesn't use them)
+        var questions = ScreeningService.GetQuestionsStatic();
+
+        Assert.Equal(10, questions.Count);
+        
+        for (int i = 0; i < 10; i++)
+        {
+            Assert.Equal(i + 1, questions[i].QuestionId);
+            Assert.False(string.IsNullOrWhiteSpace(questions[i].QuestionText));
+        }
     }
 
     [Fact]
-    public void CalculateRisk_LowScore_ReturnsLowRisk()
+    public void AiScreeningPayload_AllFieldsAreNumeric()
     {
-        // Arrange - 20 zeros = total 0
-        var scores = new List<int>(new int[20]);
+        var payload = new AiScreeningPayload
+        {
+            A1 = 1, A2 = 0, A3 = 1, A4 = 0, A5 = 1,
+            A6 = 1, A7 = 0, A8 = 1, A9 = 0, A10 = 1,
+            Age = 36,
+            Sex = 1,          // male = 1
+            Jauundice = 0,    // double 'u' matches API
+            Family_ASD = 0
+        };
 
-        // Act
-        var result = _service.CalculateRisk(scores);
-
-        // Assert
-        Assert.Equal("Low", result.RiskLevel);
-        Assert.Equal(0, result.TotalScore);
-        Assert.True(result.Probability < 0.5);
+        Assert.Equal(1, payload.A1);
+        Assert.Equal(36, payload.Age);
+        Assert.Equal(1, payload.Sex);
+        Assert.Equal(0, payload.Jauundice);
+        Assert.Equal(0, payload.Family_ASD);
     }
 
     [Fact]
-    public void CalculateRisk_HighScore_ReturnsHighRisk()
+    public void ScreeningAnalyticsResponse_EmptyResults_ReturnsZeros()
     {
-        // Arrange - 20 twos = total 40
-        var scores = new List<int>();
-        for (int i = 0; i < 20; i++) scores.Add(2);
+        var analytics = new ScreeningAnalyticsResponse(0, 0, 0, null, null);
 
-        // Act
-        var result = _service.CalculateRisk(scores);
-
-        // Assert
-        Assert.Equal("High", result.RiskLevel);
-        Assert.Equal(40, result.TotalScore);
-        Assert.True(result.Probability > 0.9);
+        Assert.Equal(0, analytics.TotalTests);
+        Assert.Equal(0, analytics.HighRiskCount);
+        Assert.Equal(0, analytics.LowRiskCount);
+        Assert.Null(analytics.LastPrediction);
+        Assert.Null(analytics.LatestConfidenceScore);
     }
 
     [Fact]
-    public void CalculateRisk_ModerateScore_ReturnsModerateRisk()
+    public void ScreeningAnalyticsResponse_WithResults_CalculatesCorrectly()
     {
-        // Arrange - 20 ones = total 20
-        var scores = new List<int>();
-        for (int i = 0; i < 20; i++) scores.Add(1);
+        var analytics = new ScreeningAnalyticsResponse(3, 1, 2, "NO", 0.82m);
 
-        // Act
-        var result = _service.CalculateRisk(scores);
-
-        // Assert
-        Assert.Equal("Moderate", result.RiskLevel);
-        Assert.Equal(20, result.TotalScore);
-    }
-
-    [Fact]
-    public void CalculateRisk_InvalidCount_ThrowsException()
-    {
-        // Arrange - only 3 answers instead of 20
-        var scores = new List<int> { 1, 2, 3 };
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => _service.CalculateRisk(scores));
+        Assert.Equal(3, analytics.TotalTests);
+        Assert.Equal(1, analytics.HighRiskCount);
+        Assert.Equal(2, analytics.LowRiskCount);
+        Assert.Equal("NO", analytics.LastPrediction);
+        Assert.Equal(0.82m, analytics.LatestConfidenceScore);
     }
 }

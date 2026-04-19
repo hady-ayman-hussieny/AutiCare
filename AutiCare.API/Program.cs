@@ -118,7 +118,7 @@ builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<ITherapistRepository, TherapistRepository>();
 builder.Services.AddScoped<ITreatmentPlanRepository, TreatmentPlanRepository>();
 builder.Services.AddScoped<ISessionRepository, SessionRepository>();
-builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
+
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
 
@@ -128,12 +128,18 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IChildService, ChildService>();
 builder.Services.AddScoped<ITreatmentService, TreatmentService>();
-builder.Services.AddScoped<IAiAssessmentService, AiAssessmentService>();
+
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<INotesService, NotesService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<IAiClientProvider, MockAiClientProvider>();
+builder.Services.AddHttpClient<IAiClientProvider, HuggingFaceAiClientProvider>(client =>
+{
+    var baseUrl = builder.Configuration["AI_BASE_URL"] ?? "https://moaz2545-gradpro.hf.space";
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(
+        int.TryParse(builder.Configuration["AI_TIMEOUT_SECONDS"], out var t) ? t : 30);
+});
 builder.Services.AddScoped<IScreeningService, ScreeningService>();
 
 // ── AutoMapper ─────────────────────────

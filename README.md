@@ -4,9 +4,9 @@ Enterprise-grade backend for the AutiCare platform, built with .NET 8, PostgreSQ
 
 ## 🚀 Key Features
 - **Clean Architecture**: Decoupled layers (API, Application, Domain, Infrastructure).
-- **PostgreSQL**: Fully migrated from SQLite for production scalability.
+- **PostgreSQL**: Production-grade database on Railway.
 - **Identity & Security**: Guid-based Identity, JWT authentication, and IDOR protection.
-- **AI Assessment**: Automated risk assessment logic for child developmental monitoring.
+- **AI Screening**: Real-time autism screening powered by HuggingFace ML models.
 - **SignalR**: Real-time communication for chat and notifications.
 - **Swagger/OpenAPI**: Comprehensive API documentation.
 
@@ -16,6 +16,7 @@ Enterprise-grade backend for the AutiCare platform, built with .NET 8, PostgreSQ
 - **Framework**: ASP.NET Core 8.0
 - **Database**: PostgreSQL (Npgsql)
 - **ORM**: Entity Framework Core 8.0
+- **AI Model**: HuggingFace Spaces (ASD Prediction API)
 - **Logging**: Serilog
 - **Mapping**: AutoMapper
 - **Validation**: FluentValidation
@@ -37,7 +38,6 @@ Update `AutiCare.API/appsettings.json` with your local PostgreSQL credentials:
 ```
 
 ### 3. Database Migration
-Run the following commands in the root directory:
 ```bash
 dotnet ef database update --project AutiCare.Infrastructure --startup-project AutiCare.API
 ```
@@ -52,42 +52,48 @@ The API will be available at `http://localhost:8080/swagger`.
 
 ## ☁️ Railway Deployment
 
-### 1. Environment Variables
-Ensure the following variables are set in your Railway project:
-- `DATABASE_URL`: Automatically provided by Railway PostgreSQL.
-- `JwtSettings__Secret`: A strong secret key (min 32 characters).
-- `JwtSettings__Issuer`: `AutiCareAPI`
-- `JwtSettings__Audience`: `AutiCareClient`
-- `ALLOWED_ORIGINS`: JSON array of allowed origins (e.g., `["https://your-frontend.vercel.app"]`).
-- `AI_BASE_URL`: The URL for the AI screening model.
-- `AI_API_KEY`: The API key for the AI screening model.
-- `AI_TIMEOUT_SECONDS`: Timeout duration for the model in seconds.
+### Environment Variables
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | Auto-provided by Railway PostgreSQL |
+| `JwtSettings__Secret` | Strong secret key (min 32 chars) |
+| `JwtSettings__Issuer` | `AutiCareAPI` |
+| `JwtSettings__Audience` | `AutiCareClient` |
+| `AI_BASE_URL` | `https://moaz2545-gradpro.hf.space` |
+| `AI_TIMEOUT_SECONDS` | `30` |
 
-### 2. Deployment Steps
+### Deployment Steps
 1. Connect your GitHub repository to Railway.
 2. Add a **PostgreSQL** service to your Railway project.
-3. Railway will detect the `Dockerfile` and build the application automatically.
-4. Database migrations will run automatically at startup.
+3. Railway will detect the `Dockerfile` and build automatically.
+4. Database migrations run automatically at startup.
 
 ---
 
-## 🤖 Autism Screening AI Integration
-The backend integrates seamlessly with an external ML screening model.
+## 🤖 Autism Screening Module
 
-### Environment Variables Configuration
-- Set `AI_BASE_URL` to configure the real ML provider URL.
-- We currently map this internally using `IAiClientProvider` for strict type-safety and easy mock substitution.
+The Screening module is the **official and only** AI-powered autism prediction system. It integrates with a real ML model hosted on HuggingFace Spaces.
 
-### Strict Payload Specification
-The dataset format strictly expects:
-- `A1` to `A10`: Integers (`0` or `1`).
-- `Age`: Integer representing months (auto-calculated from child's DOB).
-- `Sex`: Lowercase `'m'` or `'f'`.
-- `Jaundice`: Lowercase `'yes'` or `'no'`.
-- `Family_ASD`: Lowercase `'yes'` or `'no'`.
+### Endpoints
 
-#### Example API Request (`POST /api/screening/submit`)
+| Method | Route | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/screening/start` | Start a screening session | Parent |
+| `GET` | `/api/screening/questions` | Get 10 screening questions | Any |
+| `POST` | `/api/screening/submit` | Submit answers & get AI prediction | Parent |
+| `GET` | `/api/screening/results/{childId}` | Get child's result history | Any |
+| `GET` | `/api/screening/analytics/{childId}` | Get child's analytics summary | Any |
+
+### AI Model Integration
+
+- **Model**: HuggingFace ASD Prediction API (`/predict/all`)
+- **Method**: Majority vote across AdaBoost, Gradient Boosting, and Random Forest
+- **Payload**: 10 screening answers (0/1) + child demographics (Age, Sex, Jaundice, Family ASD history)
+- **Response**: Prediction class (YES/NO) + confidence score
+
+#### Example Submit Request
 ```json
+POST /api/screening/submit
 {
   "childId": 1,
   "answers": [
@@ -102,36 +108,45 @@ The dataset format strictly expects:
     { "questionId": 9, "answerValue": 0 },
     { "questionId": 10, "answerValue": 1 }
   ]
-} 
+}
 ```
-*Note: Exactly 10 answers must be provided, or the request avoids being sent to the AI and fails locally.*
 
-#### Example API Response
+#### Example Response
 ```json
 {
-  "id": 1,
-  "childId": 1,
-  "childName": "John Doe",
   "predictionClass": "YES",
-  "confidenceScore": null,
-  "createdAt": "2026-04-17T00:00:00Z"
+  "confidenceScore": 0.95,
+  "createdAt": "2026-04-19T12:00:00Z"
+}
+```
+
+### Analytics Response Example
+```json
+GET /api/screening/analytics/{childId}
+{
+  "totalTests": 3,
+  "highRiskCount": 1,
+  "lowRiskCount": 2,
+  "lastPrediction": "NO",
+  "latestConfidenceScore": 0.82
 }
 ```
 
 ---
 
 ## 🔒 Security
-- **IDOR Protection**: All resource-related services (Children, Bookings, Test Results) validate ownership before performing actions.
+- **IDOR Protection**: All screening, children, bookings, and notes endpoints validate resource ownership.
 - **JWT Authentication**: Protected endpoints require a valid Bearer token.
 - **Data Validation**: Strict validation rules using FluentValidation.
+- **Role-Based Access**: Parent, Doctor, and Therapist roles enforced.
 
 ---
 
 ## 📁 Project Structure
-- **AutiCare.API**: Controllers, Hubs, Middlewares, and Configuration.
-- **AutiCare.Application**: Service implementations, DTOs, Mappings, and Interfaces.
+- **AutiCare.API**: Controllers, Hubs, Middleware, and Configuration.
+- **AutiCare.Application**: Services, DTOs, Mappings, Validators, and Interfaces.
 - **AutiCare.Domain**: Core entities and business rules.
-- **AutiCare.Infrastructure**: EfCore Context, Repositories, Migrations, and Security services.
+- **AutiCare.Infrastructure**: DbContext, Repositories, Migrations, AI Client, and Security.
 
 ---
 

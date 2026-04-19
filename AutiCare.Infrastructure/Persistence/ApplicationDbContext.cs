@@ -61,7 +61,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
         builder.Entity<PredictionResult>()
             .HasOne(pr => pr.Child)
-            .WithMany()
+            .WithMany(c => c.PredictionResults)
             .HasForeignKey(pr => pr.ChildId)
             .OnDelete(DeleteBehavior.Cascade);
 

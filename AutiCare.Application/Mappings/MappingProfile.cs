@@ -14,9 +14,5 @@ public class MappingProfile : Profile
         CreateMap<Specialist, SpecialistResponse>();
 
         CreateMap<Session, SessionResponse>();
-
-        CreateMap<AIResult, AIResultResponse>()
-            .ForMember(d => d.ChildId, o => o.Ignore())
-            .ForMember(d => d.ChildName, o => o.Ignore());
     }
 }

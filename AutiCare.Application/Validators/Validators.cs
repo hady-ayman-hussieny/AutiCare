@@ -49,17 +49,27 @@ public class CreateTreatmentPlanValidator : AbstractValidator<CreateTreatmentPla
     }
 }
 
-public class SubmitAnswersValidator : AbstractValidator<SubmitAnswersRequest>
+public class StartScreeningRequestValidator : AbstractValidator<StartScreeningRequest>
 {
-    public SubmitAnswersValidator()
+    public StartScreeningRequestValidator()
     {
-        RuleFor(x => x.ParentTestId).GreaterThan(0);
-        RuleFor(x => x.Answers).NotEmpty().Must(a => a.Count == 20)
-            .WithMessage("Exactly 20 answers are required");
+        RuleFor(x => x.ChildId).GreaterThan(0).WithMessage("ChildId must be a positive integer.");
+    }
+}
+
+public class SubmitScreeningRequestValidator : AbstractValidator<SubmitScreeningRequest>
+{
+    public SubmitScreeningRequestValidator()
+    {
+        RuleFor(x => x.ChildId).GreaterThan(0).WithMessage("ChildId must be a positive integer.");
+        RuleFor(x => x.Answers).NotNull().Must(a => a != null && a.Count == 10)
+            .WithMessage("Exactly 10 answers are required.");
         RuleForEach(x => x.Answers).ChildRules(a =>
         {
-            a.RuleFor(x => x.AnswerValue).InclusiveBetween(0, 2)
-                .WithMessage("Answer value must be between 0 and 2");
+            a.RuleFor(x => x.QuestionId).InclusiveBetween(1, 10)
+                .WithMessage("QuestionId must be between 1 and 10.");
+            a.RuleFor(x => x.AnswerValue).InclusiveBetween(0, 1)
+                .WithMessage("AnswerValue must be 0 or 1.");
         });
     }
 }

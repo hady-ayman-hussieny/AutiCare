@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutiCare.Application.DTOs;
 using AutiCare.Application.Interfaces;
+using AutiCare.Domain.Entities;
 
 namespace AutiCare.Application.Services;
 
@@ -13,7 +14,7 @@ public class DashboardService : IDashboardService
     private readonly IChildRepository _childRepo;
     private readonly IBookingRepository _bookingRepo;
     private readonly ITreatmentPlanRepository _treatmentPlanRepo;
-    private readonly IAssessmentRepository _assessmentRepo;
+    private readonly IGenericRepository<PredictionResult> _predictionRepo;
 
     public DashboardService(
         IParentRepository parentRepo,
@@ -21,14 +22,14 @@ public class DashboardService : IDashboardService
         IChildRepository childRepo,
         IBookingRepository bookingRepo,
         ITreatmentPlanRepository treatmentPlanRepo,
-        IAssessmentRepository assessmentRepo)
+        IGenericRepository<PredictionResult> predictionRepo)
     {
         _parentRepo = parentRepo;
         _specialistRepo = specialistRepo;
         _childRepo = childRepo;
         _bookingRepo = bookingRepo;
         _treatmentPlanRepo = treatmentPlanRepo;
-        _assessmentRepo = assessmentRepo;
+        _predictionRepo = predictionRepo;
     }
 
     public async Task<ParentDashboardResponse> GetParentDashboardAsync(Guid userId)
@@ -41,14 +42,12 @@ public class DashboardService : IDashboardService
         
         int upcomingBookings = bookings.Count(b => b.BookingDate >= DateTime.UtcNow.Date);
         
-        int completedTests = 0;
-        foreach(var child in children)
-        {
-            var results = await _assessmentRepo.GetAllResultsByChildIdAsync(child.ChildId);
-            completedTests += results.Count();
-        }
+        // Count completed screenings from PredictionResults table
+        var allPredictions = await _predictionRepo.GetAllAsync();
+        var childIds = children.Select(c => c.ChildId).ToHashSet();
+        int completedTests = allPredictions.Count(p => childIds.Contains(p.ChildId));
 
-        return new ParentDashboardResponse(children.Count(), upcomingBookings, completedTests, 0); // Unread notifications can be added later
+        return new ParentDashboardResponse(children.Count(), upcomingBookings, completedTests, 0);
     }
 
     public async Task<SpecialistDashboardResponse> GetSpecialistDashboardAsync(Guid userId)
