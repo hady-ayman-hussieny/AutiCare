@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
+using System.Security.Claims;
 using System.Text;
 
 namespace AutiCare.Infrastructure.Security;
@@ -15,7 +15,7 @@ public class JwtSettings
     public string Secret { get; set; } = string.Empty;
     public string Issuer { get; set; } = string.Empty;
     public string Audience { get; set; } = string.Empty;
-    public int ExpiryMinutes { get; set; } = 15;
+    public int ExpiryMinutes { get; set; } = 43200; // Default 30 days
 }
 
 public class JwtService : IJwtService
@@ -45,26 +45,13 @@ public class JwtService : IJwtService
             issuer: _settings.Issuer,
             audience: _settings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes),
+            expires: DateTime.UtcNow.AddDays(30), // Always 30 days as requested
             signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public string GenerateRefreshToken()
-    {
-        var bytes = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(bytes);
-        return Convert.ToBase64String(bytes);
-    }
-
-    public string? ValidateRefreshToken(string token)
-    {
-        // Refresh token validation is handled directly via UserManager in AuthService
-        return null;
-    }
 
     public ClaimsPrincipal GetPrincipalFromToken(string token)
     {

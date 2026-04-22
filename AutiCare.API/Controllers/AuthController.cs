@@ -36,14 +36,6 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("refresh-token")]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
-    {
-        var result = await _authService.RefreshTokenAsync(request);
-        return Ok(result);
-    }
 
     [HttpPost("forgot-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -62,14 +54,6 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Password reset successfully." });
     }
 
-    [HttpPost("verify-email")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
-    {
-        await _authService.VerifyEmailAsync(request);
-        return Ok(new { message = "Email verified successfully." });
-    }
 
     [Authorize]
     [HttpPost("logout")]
@@ -81,6 +65,6 @@ public class AuthController : ControllerBase
         {
             await _authService.LogoutAsync(userId);
         }
-        return Ok(new { message = "Logged out successfully" });
+        return Ok(new { message = "Logged out successfully. Please delete token locally." });
     }
 }

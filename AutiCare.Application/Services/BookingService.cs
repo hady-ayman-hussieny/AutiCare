@@ -40,6 +40,16 @@ public class BookingService : IBookingService
                 throw new UnauthorizedAccessException("You are not authorized to create a booking for this child.");
         }
 
+        // Slot Conflict Check
+        var existingBookings = await _bookingRepo.GetBySpecialistIdAsync(request.SpecialistId);
+        bool hasConflict = existingBookings.Any(b => 
+            b.BookingDate.Date == request.BookingDate.Date && 
+            b.BookingTime == request.BookingTime && 
+            b.Status != "Cancelled");
+
+        if (hasConflict)
+            throw new InvalidOperationException("Slot Conflict: This specialist is already booked for this date and time.");
+
         var booking = new Booking
         {
             ParentId = parent.ParentId,

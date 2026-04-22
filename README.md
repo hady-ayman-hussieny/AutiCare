@@ -1,154 +1,99 @@
-# AutiCare Backend - Production Ready
+# AutiCare Backend 🧩
 
-Enterprise-grade backend for the AutiCare platform, built with .NET 8, PostgreSQL, and Clean Architecture.
-
-## 🚀 Key Features
-- **Clean Architecture**: Decoupled layers (API, Application, Domain, Infrastructure).
-- **PostgreSQL**: Production-grade database on Railway.
-- **Identity & Security**: Guid-based Identity, JWT authentication, and IDOR protection.
-- **AI Screening**: Real-time autism screening powered by HuggingFace ML models.
-- **SignalR**: Real-time communication for chat and notifications.
-- **Swagger/OpenAPI**: Comprehensive API documentation.
+AutiCare is a production-grade backend system designed to support a platform for autism screening, specialist consultations, and developmental tracking. Built with ASP.NET Core 8 and PostgreSQL, it leverages external AI models to provide rapid developmental insights.
 
 ---
 
-## 🛠️ Tech Stack
-- **Framework**: ASP.NET Core 8.0
-- **Database**: PostgreSQL (Npgsql)
-- **ORM**: Entity Framework Core 8.0
-- **AI Model**: HuggingFace Spaces (ASD Prediction API)
-- **Logging**: Serilog
-- **Mapping**: AutoMapper
-- **Validation**: FluentValidation
+## 🚀 Tech Stack
+-   **Framework**: ASP.NET Core 8 (Web API)
+-   **Architecture**: Clean Architecture / Repository Pattern
+-   **Database**: PostgreSQL
+-   **Identity**: ASP.NET Core Identity (JWT Stateless)
+-   **Validation**: FluentValidation
+-   **Documentation**: Swagger / OpenAPI
+-   **Deployment**: Railway
 
 ---
 
-## ⚙️ Local Setup
+## 🔗 Live URLs
+-   **Backend (Production)**: [https://auticare-production.up.railway.app](https://auticare-production.up.railway.app)
+-   **Swagger UI**: [https://auticare-production.up.railway.app/swagger](https://auticare-production.up.railway.app/swagger)
+-   **Frontend (Main)**: [https://auticare-frontend-main.vercel.app/](https://auticare-frontend-main.vercel.app/)
+-   **External AI Endpoint**: `https://moaz2545-gradpro.hf.space/predict/all`
 
-### 1. Prerequisites
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [PostgreSQL](https://www.postgresql.org/download/)
+---
 
-### 2. Configuration
-Update `AutiCare.API/appsettings.json` with your local PostgreSQL credentials:
+## 🔐 Authentication Flow
+AutiCare uses a simplified, stateless JWT-only flow optimized for production stability:
+1.  **Register**: User creates an account (Parent, Doctor, or Therapist). Login is immediate post-registration (Email verification is disabled for launch-readiness).
+2.  **Login**: User receives a high-entropy JWT Access Token.
+3.  **Token Expiration**: Access Tokens are valid for **30 days**.
+4.  **Logout**: Stateless; client deletes the token locally.
+
+---
+
+## ⚙️ Environment Variables
+The following variables are required in the production environment (Railway):
+-   `DATABASE_URL`: Connection string for PostgreSQL (Auto-parsed).
+-   `JwtSettings:Secret`: Long random string for JWT signature.
+-   `AI_BASE_URL`: URL for the HuggingFace AI prediction service.
+-   `AI_TIMEOUT_SECONDS`: Maximum wait time for AI response (Default: 30s).
+-   `Email:SmtpServer`, `Email:SmtpPort`, `Email:SenderEmail`, `Email:Password`: SMTP configuration for password reset emails.
+
+---
+
+## 🛠️ Local Setup
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/Shahd-Alaa/AutiCare
+    ```
+2.  **Update appsettings.json**: Configure your local PostgreSQL connection string.
+3.  **Apply Migrations**:
+    ```bash
+    dotnet ef database update --project AutiCare.Infrastructure --startup-project AutiCare.API
+    ```
+4.  **Run the application**:
+    ```bash
+    dotnet run --project AutiCare.API
+    ```
+
+---
+
+## 🤖 AI Integration Details
+The screening module communicates with a HuggingFace-hosted model.
+-   **Payload**: Sends 10 behavioral markers, age in months, gender, family history, and jaundice (Note: API expects field `Jauundice`).
+-   **Confidence Calculation**: The system extracts probabilities from several specialized models and returns the maximum confidence score provided by the ensemble.
+
+---
+
+## 📊 API Usage Examples
+
+### Submit Screening (Parent)
+`POST /api/screening/submit`
 ```json
-"ConnectionStrings": {
-  "DefaultConnection": "Host=localhost;Database=auticare;Username=postgres;Password=your_password"
-}
-```
-
-### 3. Database Migration
-```bash
-dotnet ef database update --project AutiCare.Infrastructure --startup-project AutiCare.API
-```
-
-### 4. Run the Application
-```bash
-dotnet run --project AutiCare.API
-```
-The API will be available at `http://localhost:8080/swagger`.
-
----
-
-## ☁️ Railway Deployment
-
-### Environment Variables
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | Auto-provided by Railway PostgreSQL |
-| `JwtSettings__Secret` | Strong secret key (min 32 chars) |
-| `JwtSettings__Issuer` | `AutiCareAPI` |
-| `JwtSettings__Audience` | `AutiCareClient` |
-| `AI_BASE_URL` | `https://moaz2545-gradpro.hf.space` |
-| `AI_TIMEOUT_SECONDS` | `30` |
-
-### Deployment Steps
-1. Connect your GitHub repository to Railway.
-2. Add a **PostgreSQL** service to your Railway project.
-3. Railway will detect the `Dockerfile` and build automatically.
-4. Database migrations run automatically at startup.
-
----
-
-## 🤖 Autism Screening Module
-
-The Screening module is the **official and only** AI-powered autism prediction system. It integrates with a real ML model hosted on HuggingFace Spaces.
-
-### Endpoints
-
-| Method | Route | Description | Auth |
-|---|---|---|---|
-| `POST` | `/api/screening/start` | Start a screening session | Parent |
-| `GET` | `/api/screening/questions` | Get 10 screening questions | Any |
-| `POST` | `/api/screening/submit` | Submit answers & get AI prediction | Parent |
-| `GET` | `/api/screening/results/{childId}` | Get child's result history | Any |
-| `GET` | `/api/screening/analytics/{childId}` | Get child's analytics summary | Any |
-
-### AI Model Integration
-
-- **Model**: HuggingFace ASD Prediction API (`/predict/all`)
-- **Method**: Majority vote across AdaBoost, Gradient Boosting, and Random Forest
-- **Payload**: 10 screening answers (0/1) + child demographics (Age, Sex, Jaundice, Family ASD history)
-- **Response**: Prediction class (YES/NO) + confidence score
-
-#### Example Submit Request
-```json
-POST /api/screening/submit
 {
-  "childId": 1,
+  "childId": 12,
   "answers": [
     { "questionId": 1, "answerValue": 1 },
-    { "questionId": 2, "answerValue": 0 },
-    { "questionId": 3, "answerValue": 1 },
-    { "questionId": 4, "answerValue": 0 },
-    { "questionId": 5, "answerValue": 1 },
-    { "questionId": 6, "answerValue": 1 },
-    { "questionId": 7, "answerValue": 0 },
-    { "questionId": 8, "answerValue": 1 },
-    { "questionId": 9, "answerValue": 0 },
-    { "questionId": 10, "answerValue": 1 }
+    ...
+    { "questionId": 10, "answerValue": 0 }
   ]
 }
 ```
 
-#### Example Response
+### Book a Specialist
+`POST /api/bookings`
 ```json
 {
-  "predictionClass": "YES",
-  "confidenceScore": 0.95,
-  "createdAt": "2026-04-19T12:00:00Z"
-}
-```
-
-### Analytics Response Example
-```json
-GET /api/screening/analytics/{childId}
-{
-  "totalTests": 3,
-  "highRiskCount": 1,
-  "lowRiskCount": 2,
-  "lastPrediction": "NO",
-  "latestConfidenceScore": 0.82
+  "specialistId": 5,
+  "childId": 12,
+  "bookingDate": "2026-05-10T00:00:00Z",
+  "bookingTime": "14:00:00"
 }
 ```
 
 ---
 
-## 🔒 Security
-- **IDOR Protection**: All screening, children, bookings, and notes endpoints validate resource ownership.
-- **JWT Authentication**: Protected endpoints require a valid Bearer token.
-- **Data Validation**: Strict validation rules using FluentValidation.
-- **Role-Based Access**: Parent, Doctor, and Therapist roles enforced.
-
----
-
-## 📁 Project Structure
-- **AutiCare.API**: Controllers, Hubs, Middleware, and Configuration.
-- **AutiCare.Application**: Services, DTOs, Mappings, Validators, and Interfaces.
-- **AutiCare.Domain**: Core entities and business rules.
-- **AutiCare.Infrastructure**: DbContext, Repositories, Migrations, AI Client, and Security.
-
----
-
-## 📜 License
-This project is licensed under the MIT License.
+## ☁️ Railway Deployment Notes
+-   The project includes a `ParseDatabaseUrl` utility in `Program.cs` to automatically convert the standard Railway internal `DATABASE_URL` into a .NET-compatible Npgsql connection string.
+-   Ensure all environment variables are populated in the Railway Dashboard under "Variables".

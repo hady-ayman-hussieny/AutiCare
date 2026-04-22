@@ -87,37 +87,18 @@ public class AuthService : IAuthService
             }
 
             var token = _jwtService.GenerateToken(createdUser);
-            var refreshToken = _jwtService.GenerateRefreshToken();
-            await _userManager.SetAuthenticationTokenAsync(createdUser, "AutiCareAPI", "RefreshToken", refreshToken);
-
-            var emailVerificationToken = await _userManager.GenerateEmailConfirmationTokenAsync(createdUser);
-            var safeToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(emailVerificationToken));
-
-            //Console.WriteLine("VERIFY TOKEN:");
-            //Console.WriteLine(safeToken);
-
-            try
-            {
-                await _emailService.SendEmailAsync(
-                    createdUser.Email!,
-                    "Verify your email",
-                    $"Use this token to verify your email:\n\n{safeToken}"
-                );
-            }
-            catch
-            {
-            }
+            // var refreshToken = _jwtService.GenerateRefreshToken(); -- Removed
+            // await _userManager.SetAuthenticationTokenAsync(createdUser, "AutiCareAPI", "RefreshToken", refreshToken); -- Removed
 
             return new AuthResponse(
-    token,
-    refreshToken,
-    createdUser.Id.ToString(),
-    createdUser.FullName,
-    createdUser.Email!,
-    request.Role,
-    DateTime.UtcNow.AddMinutes(15),
-    safeToken
-);
+                token,
+                "", // Compatibility: Empty RefreshToken
+                createdUser.Id.ToString(),
+                createdUser.FullName,
+                createdUser.Email!,
+                request.Role,
+                DateTime.UtcNow.AddDays(30)
+            );
         }
         catch (Exception)
         {
@@ -138,52 +119,21 @@ public class AuthService : IAuthService
         if (user.IsDeleted)
             throw new UnauthorizedAccessException("Account is deactivated");
 
-        if (!user.EmailConfirmed)
-            throw new UnauthorizedAccessException("Email is not verified. Please check your inbox and verify your email before logging in.");
 
         var token = _jwtService.GenerateToken(user);
-        var refreshToken = _jwtService.GenerateRefreshToken();
-        await _userManager.SetAuthenticationTokenAsync(user, "AutiCareAPI", "RefreshToken", refreshToken);
+        // var refreshToken = _jwtService.GenerateRefreshToken(); -- Removed
+        // await _userManager.SetAuthenticationTokenAsync(user, "AutiCareAPI", "RefreshToken", refreshToken); -- Removed
 
-        return new AuthResponse(token, refreshToken, user.Id.ToString(),
-            user.FullName, user.Email!, user.Role, DateTime.UtcNow.AddMinutes(15));
+        return new AuthResponse(
+            token, 
+            "", // Compatibility: Empty RefreshToken
+            user.Id.ToString(),
+            user.FullName, 
+            user.Email!, 
+            user.Role, 
+            DateTime.UtcNow.AddDays(30));
     }
 
-    public async Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request)
-    {
-        var principal = _jwtService.GetPrincipalFromToken(request.Token);
-        var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-        
-        if (userId == null) 
-            throw new UnauthorizedAccessException("Invalid access token");
-
-        var user = await _userManager.FindByIdAsync(userId)
-            ?? throw new UnauthorizedAccessException("User not found");
-
-        var storedToken = await _userManager.GetAuthenticationTokenAsync(
-    user,
-    "AutiCareAPI",
-    "RefreshToken");
-
-        if (storedToken != request.RefreshToken)
-            throw new UnauthorizedAccessException("Invalid refresh token");
-
-        var token = _jwtService.GenerateToken(user);
-        var newRefresh = _jwtService.GenerateRefreshToken();
-        await _userManager.SetAuthenticationTokenAsync(user, "AutiCareAPI", "RefreshToken", newRefresh);
-
-        return new AuthResponse(token, newRefresh, user.Id.ToString(),
-            user.FullName, user.Email!, user.Role, DateTime.UtcNow.AddMinutes(15));
-    }
-
-    public async Task LogoutAsync(Guid userId)
-    {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user != null)
-        {
-            await _userManager.RemoveAuthenticationTokenAsync(user, "AutiCareAPI", "RefreshToken");
-        }
-    }
    
     public async Task ForgotPasswordAsync(ForgotPasswordRequest request)
     {
@@ -192,7 +142,7 @@ public class AuthService : IAuthService
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
         var safeToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-        var resetLink = $"https://auticare-production.up.railway.app/reset-password?email={user.Email}&token={safeToken}";
+        var resetLink = $"https://auticare-frontend-main.vercel.app/reset-password?email={user.Email}&token={safeToken}";
         
         await _emailService.SendEmailAsync(user.Email!, "Reset your password", $"Please reset your password using this link: {resetLink}");
     }
@@ -209,19 +159,9 @@ public class AuthService : IAuthService
             throw new InvalidOperationException("Failed to reset password: " + string.Join(", ", result.Errors.Select(e => e.Description)));
     }
 
-    public async Task VerifyEmailAsync(VerifyEmailRequest request)
+    public Task LogoutAsync(Guid userId)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email)
-            ?? throw new UnauthorizedAccessException("User not found");
-
-        var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Token));
-        var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
-
-        if (!result.Succeeded)
-        {
-            throw new InvalidOperationException(
-                string.Join(", ", result.Errors.Select(e => e.Description))
-            );
-        }
+        // Simple JWT logout: no server-side state to clear
+        return Task.CompletedTask;
     }
 }

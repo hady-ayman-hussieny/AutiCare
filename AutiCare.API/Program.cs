@@ -155,19 +155,14 @@ builder.Services.AddSignalR();
 // ── CORS ───────────────────────────────
 //var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000", "https://auticare-production.up.railway.app" };
 
-var configOrigins = builder.Configuration
-    .GetSection("AllowedOrigins")
-    .Get<string[]>();
+var allowedOrigins = new[]
+{
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://auticare-frontend-main.vercel.app",
+    "https://auticare-production.up.railway.app"
+};
 
-var allowedOrigins = configOrigins != null && configOrigins.Length > 0
-    ? configOrigins
-    : new[]
-    {
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "https://auticare-frontend-main.vercel.app",
-        "https://auticare-production.up.railway.app"
-    };
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>

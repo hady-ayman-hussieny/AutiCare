@@ -11,7 +11,5 @@ namespace AutiCare.Application.Interfaces;
 public interface IJwtService
 {
     string GenerateToken(ApplicationUser user);
-    string GenerateRefreshToken();
-    string? ValidateRefreshToken(string token);
     ClaimsPrincipal GetPrincipalFromToken(string token);
 }

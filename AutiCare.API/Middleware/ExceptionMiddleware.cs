@@ -35,18 +35,19 @@ public class ExceptionMiddleware
         {
             KeyNotFoundException       => (404, ex.Message),
             UnauthorizedAccessException => (401, ex.Message),
+            InvalidOperationException or ArgumentException when ex.Message.Contains("Conflict") => (409, ex.Message),
             InvalidOperationException  => (400, ex.Message),
             ArgumentException          => (400, ex.Message),
             _                          => (500, "An unexpected error occurred.")
         };
 
         context.Response.StatusCode = statusCode;
-
+        
         var response = new
         {
-            statusCode,
-            message,
-            timestamp = DateTime.UtcNow
+            success = false,
+            message = message,
+            errors = new string[] { }
         };
 
         await context.Response.WriteAsync(JsonSerializer.Serialize(response));
