@@ -27,12 +27,33 @@ public record SubmitScreeningResponse(
     DateTime CreatedAt
 );
 
+/// <summary>
+/// Enhanced result response returned by GET /api/screening/results/{childId}.
+/// Existing fields (Id, ChildId, ChildName, PredictionClass, ConfidenceScore, CreatedAt)
+/// are preserved in the same positions for backward compatibility.
+/// New fields (AqScore … RepetitiveBehavior) are appended.
+/// </summary>
 public record ScreeningResultResponse(
     int Id,
     int ChildId,
     string ChildName,
+
+    // ── Existing AI fields (PRESERVED) ──
     string PredictionClass,
     decimal? ConfidenceScore,
+
+    // ── New enriched fields ──
+    int AqScore,
+    string RiskLevel,
+    string Probability,
+
+    int SocialAttention,
+    int JointAttention,
+    int SocialCommunication,
+    int Language,
+    int Imagination,
+    int RepetitiveBehavior,
+
     DateTime CreatedAt
 );
 

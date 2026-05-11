@@ -162,7 +162,7 @@ var allowedOrigins = builder.Configuration
         "http://localhost:3000",
         "http://localhost:5173",
         "https://auticare-frontend-main.vercel.app",
-        "https://auticare-production.up.railway.app"
+        "https://auticare-production-828c.up.railway.app"
     };
 
 builder.Services.AddCors(options =>

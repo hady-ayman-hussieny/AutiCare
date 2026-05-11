@@ -22,5 +22,11 @@ public class PredictionResult
     [Required]
     public string RawResponse { get; set; } = string.Empty;
 
+    /// <summary>
+    /// JSON-serialised Dictionary&lt;int,int&gt; of the submitted answers (QuestionId → AnswerValue).
+    /// Nullable to maintain backward compatibility with records created before this field was added.
+    /// </summary>
+    public string? AnswersJson { get; set; }
+
     public Child Child { get; set; } = null!;
 }

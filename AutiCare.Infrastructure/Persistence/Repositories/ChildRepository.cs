@@ -19,7 +19,5 @@ public class ChildRepository : GenericRepository<Child>, IChildRepository
         await _db.Children
             .Include(c => c.TreatmentPlans.Where(tp => !tp.IsDeleted))
                 .ThenInclude(tp => tp.Specialist)
-            .Include(c => c.ParentTests)
-                .ThenInclude(pt => pt.AIResult)
             .FirstOrDefaultAsync(c => c.ChildId == childId && !c.IsDeleted);
 }
