@@ -62,6 +62,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             .HasOne(s => s.TreatmentPlan).WithMany(tp => tp.Sessions)
             .HasForeignKey(s => s.TreatmentId).OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<Session>()
+            .HasOne(s => s.Parent).WithMany()
+            .HasForeignKey(s => s.ParentId).OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Session>()
+            .HasOne(s => s.Specialist).WithMany()
+            .HasForeignKey(s => s.SpecialistId).OnDelete(DeleteBehavior.Restrict);
+
         builder.Entity<Chat>()
             .HasOne(c => c.Parent).WithMany(p => p.Chats)
             .HasForeignKey(c => c.ParentId).OnDelete(DeleteBehavior.Restrict);

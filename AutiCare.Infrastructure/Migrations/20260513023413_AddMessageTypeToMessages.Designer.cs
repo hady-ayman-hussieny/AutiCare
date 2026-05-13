@@ -3,6 +3,7 @@ using System;
 using AutiCare.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AutiCare.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260513023413_AddMessageTypeToMessages")]
+    partial class AddMessageTypeToMessages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -151,6 +154,12 @@ namespace AutiCare.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BookingId"));
 
+                    b.Property<DateTime>("BookingDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<TimeSpan?>("BookingTime")
+                        .HasColumnType("interval");
+
                     b.Property<int?>("ChildId")
                         .HasColumnType("integer");
 
@@ -168,12 +177,6 @@ namespace AutiCare.Infrastructure.Migrations
 
                     b.Property<int>("ParentId")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime>("PreferredDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<TimeSpan?>("PreferredTime")
-                        .HasColumnType("interval");
 
                     b.Property<string>("Reason")
                         .HasColumnType("text");

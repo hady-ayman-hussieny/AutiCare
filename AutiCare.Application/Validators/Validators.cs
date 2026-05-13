@@ -101,8 +101,8 @@ public class CreateBookingRequestValidator : AbstractValidator<CreateBookingRequ
     public CreateBookingRequestValidator()
     {
         RuleFor(x => x.SpecialistId).GreaterThan(0).WithMessage("SpecialistId is required.");
-        RuleFor(x => x.BookingDate).NotEmpty().WithMessage("Booking Date is required.")
-            .Must(d => d.Date >= DateTime.Today).WithMessage("Booking Date cannot be in the past.");
-        RuleFor(x => x.BookingTime).NotEmpty().WithMessage("Booking Time is required.");
+        RuleFor(x => x.PreferredDate).NotEmpty().WithMessage("Preferred Date is required.")
+            .Must(d => d.Date >= DateTime.Today).WithMessage("Preferred Date cannot be in the past.");
+        RuleFor(x => x.PreferredTime).NotEmpty().WithMessage("Preferred Time is required.");
     }
 }

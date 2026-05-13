@@ -117,6 +117,69 @@ public class ChatController : ControllerBase
             .OrderBy(m => m.TimeStamp)
             .ToListAsync();
 
-        return Ok(messages);
+        return Ok(messages.Select(m => new AutiCare.Application.DTOs.MessageResponse(
+            m.MessageId,
+            m.ChatId,
+            m.Content,
+            m.SenderType,
+            m.SenderUserId,
+            m.TimeStamp,
+            m.IsRead
+        )));
+    }
+
+    [HttpPost("send")]
+    public async Task<IActionResult> SendMessage([FromBody] AutiCare.Application.DTOs.SendMessageRequest request)
+    {
+        var userId = GetUserId();
+        var role = GetRole();
+
+        var chat = await _db.Chats
+            .Include(c => c.Parent)
+            .Include(c => c.Specialist)
+            .FirstOrDefaultAsync(c => c.ChatId == request.ChatId);
+
+        if (chat == null) return NotFound("Chat not found.");
+
+        // Authorization check
+        string senderType;
+        if (role == "Parent")
+        {
+            if (chat.Parent?.UserId != userId) return Unauthorized("Not authorized to send messages in this chat.");
+            senderType = "Parent";
+        }
+        else if (role == "Doctor" || role == "Therapist")
+        {
+            if (chat.Specialist?.UserId != userId) return Unauthorized("Not authorized to send messages in this chat.");
+            senderType = "Specialist";
+        }
+        else
+        {
+            return Unauthorized("Invalid role.");
+        }
+
+        var message = new Message
+        {
+            ChatId = request.ChatId,
+            Content = request.Content,
+            SenderType = senderType,
+            SenderUserId = userId.ToString(),
+            MessageType = "User",
+            TimeStamp = DateTime.UtcNow
+        };
+
+        chat.LastMessageAt = DateTime.UtcNow;
+        _db.Messages.Add(message);
+        await _db.SaveChangesAsync();
+
+        return Ok(new AutiCare.Application.DTOs.MessageResponse(
+            message.MessageId,
+            message.ChatId,
+            message.Content,
+            message.SenderType,
+            message.SenderUserId,
+            message.TimeStamp,
+            message.IsRead
+        ));
     }
 }

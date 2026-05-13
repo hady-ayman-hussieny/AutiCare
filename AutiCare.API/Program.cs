@@ -36,12 +36,12 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
 
 if (databaseUrl!.StartsWith("postgresql://") || databaseUrl.StartsWith("postgres://"))
 {
-    Console.WriteLine("🔥 Using Railway DB");
+    Console.WriteLine(" Using Railway DB");
     databaseUrl = ParseDatabaseUrl(databaseUrl);
 }
 else
 {
-    Console.WriteLine("✅ Using Connection String");
+    Console.WriteLine(" Using Connection String");
 }
 
 string connectionString = databaseUrl!;
@@ -121,8 +121,12 @@ builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
+builder.Services.AddScoped<IChatRepository, AutiCare.Infrastructure.Persistence.Repositories.ChatRepository>();
+builder.Services.AddScoped<IMessageRepository, AutiCare.Infrastructure.Persistence.Repositories.MessageRepository>();
+builder.Services.AddScoped<IDashboardRepository, AutiCare.Infrastructure.Persistence.Repositories.DashboardRepository>();
 
 // ── Services ───────────────────────────
+builder.Services.AddScoped<ISignalRService, AutiCare.API.Services.SignalRService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -216,7 +220,7 @@ builder.Services.AddSwaggerGen(c =>
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
 {
-    Console.WriteLine($"🚀 Binding to Railway PORT: {port}");
+    Console.WriteLine($" Binding to Railway PORT: {port}");
     builder.WebHost.UseUrls($"http://*:{port}");
 }
 
@@ -239,6 +243,89 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole<Guid>(role));
         }
     }
+
+    // ── Seed Specialists ──────────────────
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+    var doctorsToSeed = new[]
+    {
+        new { Name = "Omar Ahmed", Email = "omar.ahmed@auticare.com", Role = "Doctor" },
+        new { Name = "Ahmed Ali", Email = "ahmed.ali@auticare.com", Role = "Doctor" },
+        new { Name = "Youssef Ahmed", Email = "youssef.ahmed@auticare.com", Role = "Doctor" },
+        new { Name = "Mahmoud Tarek", Email = "mahmoud.tarek@auticare.com", Role = "Doctor" },
+        new { Name = "Younes Mahmoud", Email = "younes.mahmoud@auticare.com", Role = "Doctor" }
+    };
+
+    var therapistsToSeed = new[]
+    {
+        new { Name = "Sara Mohamed", Email = "sara.mohamed@auticare.com", Role = "Therapist", Spec = "Speech Therapist" },
+        new { Name = "Shahd Mohamed", Email = "shahd.mohamed@auticare.com", Role = "Therapist", Spec = "ABA Therapist" },
+        new { Name = "Malak Tamer", Email = "malak.tamer@auticare.com", Role = "Therapist", Spec = "Occupational Therapist" },
+        new { Name = "Rawan Essam", Email = "rawan.essam@auticare.com", Role = "Therapist", Spec = "Behavioral Therapist" },
+        new { Name = "Salma Hussein", Email = "salma.hussein@auticare.com", Role = "Therapist", Spec = "Sensory Integration Therapist" }
+    };
+
+    var password = "AutiCare123!";
+
+    foreach (var doc in doctorsToSeed)
+    {
+        var existingUser = await userManager.FindByEmailAsync(doc.Email);
+        if (existingUser == null)
+        {
+            var user = new ApplicationUser { UserName = doc.Email, Email = doc.Email, FullName = doc.Name, Role = doc.Role };
+            var result = await userManager.CreateAsync(user, password);
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(user, doc.Role);
+                db.Specialists.Add(new Specialist
+                {
+                    UserId = user.Id,
+                    Name = doc.Name,
+                    Specialization = "Pediatric Neurologist",
+                    Bio = "Experienced Pediatric Neurologist",
+                    YearsExperience = 10,
+                    Email = doc.Email
+                });
+            }
+        }
+        else if (string.IsNullOrEmpty(existingUser.Role))
+        {
+            existingUser.Role = doc.Role;
+            existingUser.FullName = doc.Name;
+            await userManager.UpdateAsync(existingUser);
+        }
+    }
+
+    foreach (var thr in therapistsToSeed)
+    {
+        var existingUser = await userManager.FindByEmailAsync(thr.Email);
+        if (existingUser == null)
+        {
+            var user = new ApplicationUser { UserName = thr.Email, Email = thr.Email, FullName = thr.Name, Role = thr.Role };
+            var result = await userManager.CreateAsync(user, password);
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(user, thr.Role);
+                db.Specialists.Add(new Specialist
+                {
+                    UserId = user.Id,
+                    Name = thr.Name,
+                    Specialization = thr.Spec,
+                    Bio = $"Experienced {thr.Spec}",
+                    YearsExperience = 5,
+                    Email = thr.Email
+                });
+            }
+        }
+        else if (string.IsNullOrEmpty(existingUser.Role))
+        {
+            existingUser.Role = thr.Role;
+            existingUser.FullName = thr.Name;
+            await userManager.UpdateAsync(existingUser);
+        }
+    }
+
+    await db.SaveChangesAsync();
 }
 
 // ── Pipeline ──────────────────────────

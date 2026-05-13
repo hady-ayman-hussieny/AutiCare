@@ -20,7 +20,7 @@ public class BookingRepository : GenericRepository<Booking>, IBookingRepository
             .Include(b => b.Specialist)
             .Include(b => b.Child)
             .Where(b => b.ParentId == parentId && !b.IsDeleted)
-            .OrderByDescending(b => b.BookingDate)
+            .OrderByDescending(b => b.PreferredDate)
             .ToListAsync();
     }
 
@@ -31,7 +31,7 @@ public class BookingRepository : GenericRepository<Booking>, IBookingRepository
             .Include(b => b.Specialist)
             .Include(b => b.Child)
             .Where(b => b.SpecialistId == specialistId && !b.IsDeleted)
-            .OrderByDescending(b => b.BookingDate)
+            .OrderByDescending(b => b.PreferredDate)
             .ToListAsync();
     }
 
@@ -41,8 +41,17 @@ public class BookingRepository : GenericRepository<Booking>, IBookingRepository
             .Include(b => b.Parent)
             .Include(b => b.Specialist)
             .Include(b => b.Child)
-            .Where(b => b.SpecialistId == specialistId && !b.IsDeleted && b.BookingDate >= System.DateTime.UtcNow.Date)
-            .OrderBy(b => b.BookingDate)
+            .Where(b => b.SpecialistId == specialistId && !b.IsDeleted && b.PreferredDate >= System.DateTime.UtcNow.Date)
+            .OrderBy(b => b.PreferredDate)
             .ToListAsync();
+    }
+
+    public new async Task<Booking?> GetByIdAsync(int id)
+    {
+        return await _set
+            .Include(b => b.Parent)
+            .Include(b => b.Specialist)
+            .Include(b => b.Child)
+            .FirstOrDefaultAsync(b => b.BookingId == id && !b.IsDeleted);
     }
 }

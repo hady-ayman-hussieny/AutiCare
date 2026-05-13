@@ -10,9 +10,9 @@ public class Booking
     public int SpecialistId { get; set; }
     public int? ChildId { get; set; }
     
-    public DateTime BookingDate { get; set; }
-    public TimeSpan? BookingTime { get; set; }
-    public string Status { get; set; } = "Pending"; // Pending, Confirmed, Cancelled, Completed
+    public DateTime PreferredDate { get; set; }
+    public TimeSpan? PreferredTime { get; set; }
+    public string Status { get; set; } = "Pending"; // Pending, Confirmed, Rejected, Completed
     public string? Reason { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

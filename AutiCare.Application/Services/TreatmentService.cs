@@ -11,19 +11,28 @@ public class TreatmentService : ITreatmentService
     private readonly IDoctorRepository _doctorRepo;
     private readonly IParentRepository _parentRepo;
     private readonly IChildRepository _childRepo;
+    private readonly IChatRepository _chatRepo;
+    private readonly IMessageRepository _messageRepo;
+    private readonly ISignalRService _signalRService;
 
     public TreatmentService(
         ITreatmentPlanRepository treatmentRepo,
         ISessionRepository sessionRepo,
         IDoctorRepository doctorRepo,
         IParentRepository parentRepo,
-        IChildRepository childRepo)
+        IChildRepository childRepo,
+        IChatRepository chatRepo,
+        IMessageRepository messageRepo,
+        ISignalRService signalRService)
     {
         _treatmentRepo = treatmentRepo;
         _sessionRepo = sessionRepo;
         _doctorRepo = doctorRepo;
         _parentRepo = parentRepo;
         _childRepo = childRepo;
+        _chatRepo = chatRepo;
+        _messageRepo = messageRepo;
+        _signalRService = signalRService;
     }
 
     public async Task<IEnumerable<TreatmentPlanResponse>> GetMyPlansAsync(Guid specialistUserId)
@@ -118,18 +127,33 @@ public class TreatmentService : ITreatmentService
 
     public async Task<SessionResponse> AddSessionAsync(Guid specialistUserId, CreateSessionRequest request)
     {
-        var plan = await _treatmentRepo.GetByIdAsync(request.TreatmentId)
-            ?? throw new KeyNotFoundException("Treatment plan not found");
-
         var specialist = await _doctorRepo.GetByUserIdAsync(specialistUserId);
-        if (specialist == null || plan.SpecialistId != specialist.SpecialistId)
-            throw new UnauthorizedAccessException("Cannot add sessions to another specialist's plan.");
+        if (specialist == null) throw new UnauthorizedAccessException("Specialist not found.");
+
+        if (request.SpecialistId != specialist.SpecialistId)
+            throw new UnauthorizedAccessException("Cannot book session for another specialist.");
+
+        if (request.TreatmentId.HasValue)
+        {
+            var plan = await _treatmentRepo.GetByIdAsync(request.TreatmentId.Value);
+            if (plan == null) throw new KeyNotFoundException("Treatment plan not found.");
+            if (plan.SpecialistId != specialist.SpecialistId)
+                throw new UnauthorizedAccessException("Cannot add sessions to another specialist's plan.");
+        }
+
+        var meetingLink = !string.IsNullOrWhiteSpace(request.MeetingLink) 
+            ? request.MeetingLink 
+            : $"https://zoom.us/j/{new Random().Next(100000000, 999999999)}";
 
         var session = new Session
         {
             TreatmentId = request.TreatmentId,
+            ParentId = request.ParentId,
+            SpecialistId = request.SpecialistId,
             SessionDate = request.SessionDate,
             SessionTime = request.SessionTime,
+            Duration = request.Duration,
+            MeetingLink = meetingLink,
             SessionNotes = request.SessionNotes,
             ActivityNotes = request.ActivityNotes,
             Report = request.Report
@@ -137,6 +161,36 @@ public class TreatmentService : ITreatmentService
 
         await _sessionRepo.AddAsync(session);
         await _sessionRepo.SaveChangesAsync();
+
+        // ── Auto Session Chat Message + SignalR ──
+        var chat = await _chatRepo.GetChatByParticipantsAsync(request.ParentId, request.SpecialistId);
+        if (chat == null)
+        {
+            chat = new Chat { ParentId = request.ParentId, SpecialistId = request.SpecialistId };
+            await _chatRepo.AddAsync(chat);
+            await _chatRepo.SaveChangesAsync();
+        }
+
+        var formattedDate = request.SessionDate.ToString("dd MMM yyyy");
+        var formattedTime = request.SessionTime.HasValue ? DateTime.Today.Add(request.SessionTime.Value).ToString("h:mm tt") : "TBD";
+        var content = $"Session confirmed with Dr. {specialist.Name}\n\nDate: {formattedDate}\nTime: {formattedTime}\n\nMeeting Link:\n{meetingLink}";
+
+        var message = new Message
+        {
+            ChatId = chat.ChatId,
+            Content = content,
+            SenderType = "System",
+            SenderUserId = "System",
+            MessageType = "System",
+            TimeStamp = DateTime.UtcNow
+        };
+        await _messageRepo.AddAsync(message);
+        chat.LastMessageAt = DateTime.UtcNow;
+        _chatRepo.Update(chat);
+        await _messageRepo.SaveChangesAsync();
+
+        await _signalRService.SendSystemMessageAsync(chat.ChatId, message.MessageId, message.Content, message.TimeStamp);
+
         return ToSessionResponse(session);
     }
 
@@ -168,11 +222,9 @@ public class TreatmentService : ITreatmentService
         var session = await _sessionRepo.GetByIdAsync(sessionId)
             ?? throw new KeyNotFoundException("Session not found");
 
-        var plan = await _treatmentRepo.GetByIdAsync(session.TreatmentId);
         var specialist = await _doctorRepo.GetByUserIdAsync(specialistUserId);
-
-        if (plan == null || specialist == null || plan.SpecialistId != specialist.SpecialistId)
-            throw new UnauthorizedAccessException("Cannot update a session for an unassigned plan.");
+        if (specialist == null || session.SpecialistId != specialist.SpecialistId)
+            throw new UnauthorizedAccessException("Cannot update a session not assigned to you.");
 
         if (request.SessionNotes != null) session.SessionNotes = request.SessionNotes;
         if (request.ActivityNotes != null) session.ActivityNotes = request.ActivityNotes;
@@ -194,6 +246,6 @@ public class TreatmentService : ITreatmentService
         p.CreatedAt);
 
     private static SessionResponse ToSessionResponse(Session s) => new(
-        s.SessionId, s.TreatmentId, s.SessionDate, s.SessionTime,
-        s.SessionNotes, s.ActivityNotes, s.Report, s.CreatedAt);
+        s.SessionId, s.TreatmentId, s.ParentId, s.SpecialistId, s.SessionDate, s.SessionTime, s.Duration,
+        s.MeetingLink, s.SessionNotes, s.ActivityNotes, s.Report, s.CreatedAt);
 }

@@ -5,7 +5,11 @@ namespace AutiCare.Application.DTOs;
 
 public record StartChatRequest(int SpecialistId);
 
-public record SendMessageRequest(string Content);
+public class SendMessageRequest
+{
+    public int ChatId { get; set; }
+    public string Content { get; set; } = string.Empty;
+}
 
 public record MessageResponse(
     int MessageId,

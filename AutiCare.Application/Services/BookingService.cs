@@ -40,23 +40,16 @@ public class BookingService : IBookingService
                 throw new UnauthorizedAccessException("You are not authorized to create a booking for this child.");
         }
 
-        // Slot Conflict Check
-        var existingBookings = await _bookingRepo.GetBySpecialistIdAsync(request.SpecialistId);
-        bool hasConflict = existingBookings.Any(b => 
-            b.BookingDate.Date == request.BookingDate.Date && 
-            b.BookingTime == request.BookingTime && 
-            b.Status != "Cancelled");
-
-        if (hasConflict)
-            throw new InvalidOperationException("Slot Conflict: This specialist is already booked for this date and time.");
+        // Note: Hard conflict check removed as bookings are now requests.
+        // We could add a warning or soft check here if needed in the future.
 
         var booking = new Booking
         {
             ParentId = parent.ParentId,
             SpecialistId = request.SpecialistId,
             ChildId = request.ChildId,
-            BookingDate = request.BookingDate,
-            BookingTime = request.BookingTime,
+            PreferredDate = request.PreferredDate,
+            PreferredTime = request.PreferredTime,
             Reason = request.Reason,
             Status = "Pending"
         };
@@ -134,6 +127,10 @@ public class BookingService : IBookingService
             throw new UnauthorizedAccessException("Cannot update this status");
         }
 
+        var validStatuses = new[] { "Pending", "Confirmed", "Rejected", "Completed", "Cancelled" };
+        if (!validStatuses.Contains(status))
+            throw new ArgumentException("Invalid booking status.");
+
         booking.Status = status;
         _bookingRepo.Update(booking);
         await _bookingRepo.SaveChangesAsync();
@@ -149,8 +146,8 @@ public class BookingService : IBookingService
             if (parent == null || booking.ParentId != parent.ParentId) throw new UnauthorizedAccessException();
         }
 
-        if (request.BookingDate.HasValue) booking.BookingDate = request.BookingDate.Value;
-        if (request.BookingTime.HasValue) booking.BookingTime = request.BookingTime;
+        if (request.PreferredDate.HasValue) booking.PreferredDate = request.PreferredDate.Value;
+        if (request.PreferredTime.HasValue) booking.PreferredTime = request.PreferredTime;
         if (request.Reason != null) booking.Reason = request.Reason;
         if (request.Status != null && (role == "Doctor" || role == "Therapist")) booking.Status = request.Status;
 
@@ -177,7 +174,7 @@ public class BookingService : IBookingService
         b.SpecialistId, b.Specialist?.Name ?? "",
         b.ChildId,
         b.Child != null ? $"{b.Child.FirstName} {b.Child.LastName}" : null,
-        b.BookingDate, b.BookingTime,
+        b.PreferredDate, b.PreferredTime,
         b.Status, b.Reason,
         b.CreatedAt
     );

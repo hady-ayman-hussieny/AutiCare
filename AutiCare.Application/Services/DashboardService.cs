@@ -15,6 +15,7 @@ public class DashboardService : IDashboardService
     private readonly IBookingRepository _bookingRepo;
     private readonly ITreatmentPlanRepository _treatmentPlanRepo;
     private readonly IGenericRepository<PredictionResult> _predictionRepo;
+    private readonly IDashboardRepository _dashboardRepo;
 
     public DashboardService(
         IParentRepository parentRepo,
@@ -22,7 +23,8 @@ public class DashboardService : IDashboardService
         IChildRepository childRepo,
         IBookingRepository bookingRepo,
         ITreatmentPlanRepository treatmentPlanRepo,
-        IGenericRepository<PredictionResult> predictionRepo)
+        IGenericRepository<PredictionResult> predictionRepo,
+        IDashboardRepository dashboardRepo)
     {
         _parentRepo = parentRepo;
         _specialistRepo = specialistRepo;
@@ -30,6 +32,7 @@ public class DashboardService : IDashboardService
         _bookingRepo = bookingRepo;
         _treatmentPlanRepo = treatmentPlanRepo;
         _predictionRepo = predictionRepo;
+        _dashboardRepo = dashboardRepo;
     }
 
     public async Task<ParentDashboardResponse> GetParentDashboardAsync(Guid userId)
@@ -40,7 +43,7 @@ public class DashboardService : IDashboardService
         var children = await _childRepo.GetByParentIdAsync(parent.ParentId);
         var bookings = await _bookingRepo.GetByParentIdAsync(parent.ParentId);
         
-        int upcomingBookings = bookings.Count(b => b.BookingDate >= DateTime.UtcNow.Date);
+        int upcomingBookings = bookings.Count(b => b.PreferredDate >= DateTime.UtcNow.Date);
         
         // Count completed screenings from PredictionResults table
         var allPredictions = await _predictionRepo.GetAllAsync();
@@ -53,13 +56,8 @@ public class DashboardService : IDashboardService
     public async Task<SpecialistDashboardResponse> GetSpecialistDashboardAsync(Guid userId)
     {
         var specialist = await _specialistRepo.GetByUserIdAsync(userId);
-        if (specialist == null) return new SpecialistDashboardResponse(0, 0, 0, 0);
+        if (specialist == null) return new SpecialistDashboardResponse(0, 0, 0, 0, new(), new(), new());
 
-        var bookings = await _bookingRepo.GetUpcomingBySpecialistIdAsync(specialist.SpecialistId);
-        var plans = await _treatmentPlanRepo.GetBySpecialistIdAsync(specialist.SpecialistId);
-
-        int totalPatients = plans.Select(p => p.ChildId).Distinct().Count();
-
-        return new SpecialistDashboardResponse(totalPatients, bookings.Count(), plans.Count(), 0);
+        return await _dashboardRepo.GetSpecialistDashboardDataAsync(specialist.SpecialistId);
     }
 }

@@ -11,6 +11,7 @@ public class Message
     public string Content { get; set; } = string.Empty;
     public string SenderType { get; set; } = string.Empty;
     public string SenderUserId { get; set; } = string.Empty;
+    public string MessageType { get; set; } = "User";
     public DateTime TimeStamp { get; set; } = DateTime.UtcNow;
     public bool IsRead { get; set; } = false;
 

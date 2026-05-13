@@ -11,7 +11,30 @@ public record ParentDashboardResponse(
 
 public record SpecialistDashboardResponse(
     int TotalPatients,
-    int UpcomingBookings,
-    int ActiveTreatmentPlans,
-    int UnreadNotifications
+    int UpcomingSessionsCount,
+    int PendingMessagesCount,
+    int ReportsToReviewCount,
+    System.Collections.Generic.List<UpcomingSessionDto> UpcomingSessions,
+    System.Collections.Generic.List<LatestNoteDto> LatestNotes,
+    System.Collections.Generic.List<PatientCardDto> PatientCards
+);
+
+public record UpcomingSessionDto(
+    string ChildName,
+    DateTime SessionDate,
+    int? Duration,
+    string? MeetingLink
+);
+
+public record LatestNoteDto(
+    string? TherapistNotes,
+    string? ParentNotes
+);
+
+public record PatientCardDto(
+    string ChildName,
+    int Age,
+    string ASDLevel,
+    string AssignedTherapist,
+    int GoalPercentage
 );
