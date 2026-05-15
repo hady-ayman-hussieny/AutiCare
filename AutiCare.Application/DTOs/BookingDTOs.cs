@@ -18,6 +18,12 @@ public record UpdateBookingRequest(
     string? Reason
 );
 
+/// <summary>
+/// Payload for PATCH /api/bookings/{id}/status.
+/// Send: { "status": "Confirmed" }  Valid values: Pending | Confirmed | Rejected | Completed | Cancelled
+/// </summary>
+public record UpdateBookingStatusRequest(string Status);
+
 public record BookingResponse(
     int BookingId,
     int ParentId,

@@ -1,99 +1,75 @@
-# AutiCare Backend 🧩
+# AutiCare Backend
 
-AutiCare is a production-grade backend system designed to support a platform for autism screening, specialist consultations, and developmental tracking. Built with ASP.NET Core 8 and PostgreSQL, it leverages external AI models to provide rapid developmental insights.
+The AutiCare Backend is an ASP.NET Core 8 Web API providing telehealth and AI-powered autism screening capabilities, connecting Parents with Specialists (Doctors & Therapists).
 
----
+## Core Architecture
+- **Framework**: ASP.NET Core 8
+- **Database**: PostgreSQL (Entity Framework Core)
+- **Authentication**: Stateless JWT Bearer tokens
+- **AI Integration**: HuggingFace Model API integration for screening
 
-## 🚀 Tech Stack
--   **Framework**: ASP.NET Core 8 (Web API)
--   **Architecture**: Clean Architecture / Repository Pattern
--   **Database**: PostgreSQL
--   **Identity**: ASP.NET Core Identity (JWT Stateless)
--   **Validation**: FluentValidation
--   **Documentation**: Swagger / OpenAPI
--   **Deployment**: Railway
+## Parent ↔ Specialist Telehealth Flow
 
----
+The core workflow of AutiCare follows a modern telehealth booking system:
 
-## 🔗 Live URLs
--   **Backend (Production)**: [https://auticare-production.up.railway.app](https://auticare-production.up.railway.app)
--   **Swagger UI**: [https://auticare-production.up.railway.app/swagger](https://auticare-production.up.railway.app/swagger)
--   **Frontend (Main)**: [https://auticare-frontend-main.vercel.app/](https://auticare-frontend-main.vercel.app/)
--   **External AI Endpoint**: `https://moaz2545-gradpro.hf.space/predict/all`
+1. **AI Screening**
+   - Parents register, add their child, and answer a 10-question behavioral questionnaire.
+   - The backend communicates with a HuggingFace AI model to predict autism likelihood (`YES`/`NO`) and confidence scores.
 
----
+2. **Booking Requests**
+   - Parents browse available Specialists and create a `Booking` request for a specific date and time.
+   - The booking initially has a `Pending` status.
 
-## 🔐 Authentication Flow
-AutiCare uses a simplified, stateless JWT-only flow optimized for production stability:
-1.  **Register**: User creates an account (Parent, Doctor, or Therapist). Login is immediate post-registration (Email verification is disabled for launch-readiness).
-2.  **Login**: User receives a high-entropy JWT Access Token.
-3.  **Token Expiration**: Access Tokens are valid for **30 days**.
-4.  **Logout**: Stateless; client deletes the token locally.
+3. **Specialist Confirmation**
+   - Specialists log in and review their assigned `Pending` bookings via the Dashboard.
+   - The Specialist updates the status to `Confirmed`.
 
----
+4. **Session Communication & Zoom Links**
+   - A `Chat` is initiated between the Parent and Specialist.
+   - The Specialist sends a structured session confirmation message containing a **Zoom Meeting Link**, date, and time.
+   - The message is tagged with `MessageType = "ZoomLink"` so client applications can render a distinct "Join Session" UI button.
 
-## ⚙️ Environment Variables
-The following variables are required in the production environment (Railway):
--   `DATABASE_URL`: Connection string for PostgreSQL (Auto-parsed).
--   `JwtSettings:Secret`: Long random string for JWT signature.
--   `AI_BASE_URL`: URL for the HuggingFace AI prediction service.
--   `AI_TIMEOUT_SECONDS`: Maximum wait time for AI response (Default: 30s).
--   `Email:SmtpServer`, `Email:SmtpPort`, `Email:SenderEmail`, `Email:Password`: SMTP configuration for password reset emails.
+## Security & Authorization
 
----
+All endpoints are fully protected by Role-Based Access Control (RBAC) and strict Insecure Direct Object Reference (IDOR) ownership checks:
+- **Parents** can only view/modify data (children, screenings, bookings, chats) that belong to them.
+- **Specialists** can only view bookings and send messages in chats explicitly assigned to them.
+- Unauthorized access attempts by authenticated users return `HTTP 403 Forbidden`.
 
-## 🛠️ Local Setup
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/Shahd-Alaa/AutiCare
-    ```
-2.  **Update appsettings.json**: Configure your local PostgreSQL connection string.
-3.  **Apply Migrations**:
-    ```bash
-    dotnet ef database update --project AutiCare.Infrastructure --startup-project AutiCare.API
-    ```
-4.  **Run the application**:
-    ```bash
-    dotnet run --project AutiCare.API
-    ```
+## Local Development & Setup
 
----
+### Prerequisites
+- .NET 8 SDK
+- PostgreSQL Server
 
-## 🤖 AI Integration Details
-The screening module communicates with a HuggingFace-hosted model.
--   **Payload**: Sends 10 behavioral markers, age in months, gender, family history, and jaundice (Note: API expects field `Jauundice`).
--   **Confidence Calculation**: The system extracts probabilities from several specialized models and returns the maximum confidence score provided by the ensemble.
-
----
-
-## 📊 API Usage Examples
-
-### Submit Screening (Parent)
-`POST /api/screening/submit`
-```json
-{
-  "childId": 12,
-  "answers": [
-    { "questionId": 1, "answerValue": 1 },
-    ...
-    { "questionId": 10, "answerValue": 0 }
-  ]
-}
+### Environment Setup
+1. Clone the repository.
+2. Ensure PostgreSQL is running and update `ConnectionStrings:DefaultConnection` in `AutiCare.API/appsettings.json` if needed.
+3. Apply migrations:
+```bash
+cd AutiCare.Infrastructure
+dotnet ef database update --startup-project ../AutiCare.API
 ```
 
-### Book a Specialist
-`POST /api/bookings`
-```json
-{
-  "specialistId": 5,
-  "childId": 12,
-  "bookingDate": "2026-05-10T00:00:00Z",
-  "bookingTime": "14:00:00"
-}
+### Running the API
+```bash
+cd AutiCare.API
+dotnet run
 ```
+Swagger UI will be available at `http://localhost:<port>`.
 
----
+### Seeded Test Accounts
+The database automatically seeds standard roles and test Specialist accounts on startup. Use these to test the Specialist flows:
 
-## ☁️ Railway Deployment Notes
--   The project includes a `ParseDatabaseUrl` utility in `Program.cs` to automatically convert the standard Railway internal `DATABASE_URL` into a .NET-compatible Npgsql connection string.
--   Ensure all environment variables are populated in the Railway Dashboard under "Variables".
+| Role | Email | Password |
+|------|-------|----------|
+| Doctor | omar.ahmed@auticare.com | AutiCare123! |
+| Doctor | ahmed.ali@auticare.com | AutiCare123! |
+| Therapist | sara.mohamed@auticare.com | AutiCare123! |
+
+*(Note: Parent accounts must be manually registered via the `/api/auth/register` endpoint).*
+
+## Known Limitations & Technical Debt
+- **Zoom Link Integration**: Zoom links are generated manually by the Specialist and sent via the chat system. There is no automated Zoom API integration yet.
+- **Real-time Notifications**: Real-time push via SignalR for chat messages is implemented on the backend but may require active polling on some frontends if WebSocket connections drop.
+- **Legacy Entities**: The `Sessions` and `TreatmentPlans` tables are retained for backward compatibility with older client versions, though the primary workflow now uses the `Bookings` table.

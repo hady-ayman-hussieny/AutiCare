@@ -33,12 +33,14 @@ public class ExceptionMiddleware
 
         (int statusCode, string message) = ex switch
         {
-            KeyNotFoundException       => (404, ex.Message),
-            UnauthorizedAccessException => (401, ex.Message),
+            KeyNotFoundException        => (404, ex.Message),
+            // 403 Forbidden: caller is authenticated but not authorised to access the resource.
+            // 401 is handled by JwtBearer middleware before requests reach controllers.
+            UnauthorizedAccessException => (403, ex.Message),
             InvalidOperationException or ArgumentException when ex.Message.Contains("Conflict") => (409, ex.Message),
-            InvalidOperationException  => (400, ex.Message),
-            ArgumentException          => (400, ex.Message),
-            _                          => (500, "An unexpected error occurred.")
+            InvalidOperationException   => (400, ex.Message),
+            ArgumentException           => (400, ex.Message),
+            _                           => (500, "An unexpected error occurred.")
         };
 
         context.Response.StatusCode = statusCode;
