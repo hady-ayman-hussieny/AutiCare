@@ -117,6 +117,13 @@ public class ScreeningService : IScreeningService
         if (child.ParentId != parent.ParentId)
             throw new UnauthorizedAccessException("You are not authorized to submit screening for this child.");
 
+        // Validate child metadata for AI prediction
+        if (string.IsNullOrWhiteSpace(child.Gender))
+            throw new ArgumentException("Child profile is incomplete. Gender is required for AI prediction.");
+            
+        if (child.DateOfBirth == default || child.DateOfBirth > DateTime.UtcNow)
+            throw new ArgumentException("Child profile is incomplete. A valid Date of Birth is required.");
+
         // Calculate age in months
         int ageInMonths = ((DateTime.UtcNow.Year - child.DateOfBirth.Year) * 12)
                         + DateTime.UtcNow.Month - child.DateOfBirth.Month;
@@ -140,7 +147,7 @@ public class ScreeningService : IScreeningService
             A10        = answersDict[10],
             Age        = ageInMonths,
             Sex        = string.Equals(child.Gender, "Male", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
-            Jauundice  = child.Jaundice  ? 1 : 0,   // double 'u' matches the AI API typo
+            Jaundice   = child.Jaundice  ? 1 : 0,   
             Family_ASD = child.FamilyAsd ? 1 : 0
         };
 

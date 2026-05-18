@@ -8,12 +8,16 @@ public record CreateChildRequest(
     string LastName,
     DateTime DateOfBirth,
     string Gender,
+    bool FamilyAutismHistory,
+    bool JaundiceHistory,
     string? MedicalHistory
 );
 
 public record UpdateChildRequest(
     string? FirstName,
     string? LastName,
+    bool? FamilyAutismHistory,
+    bool? JaundiceHistory,
     string? MedicalHistory
 );
 
@@ -24,6 +28,8 @@ public record ChildResponse(
     DateTime DateOfBirth,
     string Gender,
     int AgeInYears,
+    bool FamilyAutismHistory,
+    bool JaundiceHistory,
     string? MedicalHistory,
     DateTime CreatedAt
 );

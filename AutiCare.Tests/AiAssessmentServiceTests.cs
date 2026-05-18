@@ -32,14 +32,14 @@ public class ScreeningServiceTests
             A6 = 1, A7 = 0, A8 = 1, A9 = 0, A10 = 1,
             Age = 36,
             Sex = 1,          // male = 1
-            Jauundice = 0,    // double 'u' matches API
+            Jaundice = 0,    
             Family_ASD = 0
         };
 
         Assert.Equal(1, payload.A1);
         Assert.Equal(36, payload.Age);
         Assert.Equal(1, payload.Sex);
-        Assert.Equal(0, payload.Jauundice);
+        Assert.Equal(0, payload.Jaundice);
         Assert.Equal(0, payload.Family_ASD);
     }
 

@@ -27,6 +27,8 @@ public class ChildService : IChildService
             LastName = request.LastName,
             DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth, DateTimeKind.Utc),
             Gender = request.Gender,
+            FamilyAsd = request.FamilyAutismHistory,
+            Jaundice = request.JaundiceHistory,
             MedicalHistory = request.MedicalHistory
         }; 
 
@@ -70,6 +72,8 @@ public class ChildService : IChildService
 
         if (request.FirstName != null) child.FirstName = request.FirstName;
         if (request.LastName != null) child.LastName = request.LastName;
+        if (request.FamilyAutismHistory != null) child.FamilyAsd = request.FamilyAutismHistory.Value;
+        if (request.JaundiceHistory != null) child.Jaundice = request.JaundiceHistory.Value;
         if (request.MedicalHistory != null) child.MedicalHistory = request.MedicalHistory;
 
         _childRepo.Update(child);
@@ -99,5 +103,6 @@ public class ChildService : IChildService
     private static ChildResponse ToResponse(Child c) => new(
         c.ChildId, c.FirstName, c.LastName, c.DateOfBirth, c.Gender,
         DateTime.Today.Year - c.DateOfBirth.Year,
+        c.FamilyAsd, c.Jaundice,
         c.MedicalHistory, c.CreatedAt);
 }

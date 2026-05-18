@@ -85,7 +85,8 @@ public class AiScreeningPayload
     public int A10 { get; set; }
     public int Age { get; set; }
     public int Sex { get; set; }           // 0 = female, 1 = male
-    public int Jauundice { get; set; }     // 0 = no, 1 = yes (double 'u' matches API)
+    [JsonPropertyName("Jauundice")]
+    public int Jaundice { get; set; }      // 0 = no, 1 = yes 
     public int Family_ASD { get; set; }    // 0 = no, 1 = yes
 }
 
