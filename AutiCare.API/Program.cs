@@ -165,6 +165,7 @@ var allowedOrigins = builder.Configuration
     {
         "http://localhost:3000",
         "http://localhost:5173",
+
         "https://localhost:5173",
 
         "http://localhost:5174",
@@ -172,6 +173,11 @@ var allowedOrigins = builder.Configuration
 
         "https://auticare-main.vercel.app"
     };
+
+       
+    
+
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
