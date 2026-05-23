@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 
 namespace AutiCare.API.Controllers;
 
-/// <summary>
-/// Chat endpoints for Parent ↔ Specialist messaging including Zoom-link session confirmation.
-/// </summary>
+
+// Chat endpoints for Parent ↔ Specialist messaging including Zoom-link session confirmation.
+
 [ApiController]
 [Route("api/chat")]
 [Authorize]

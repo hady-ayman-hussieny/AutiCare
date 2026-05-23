@@ -158,7 +158,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<
 builder.Services.AddSignalR();
 
 // ── CORS ───────────────────────────────
-// Origins are read from config so they can be overridden via Railway env vars.
+
 var allowedOrigins = builder.Configuration
     .GetSection("AllowedOrigins")
     .Get<string[]>()
@@ -233,7 +233,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── Railway PORT binding ──────────────
-// MUST be set BEFORE builder.Build() or it has no effect.
+
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
 {
@@ -348,9 +348,6 @@ using (var scope = app.Services.CreateScope())
 // ── Pipeline ──────────────────────────
 app.UseMiddleware<ExceptionMiddleware>();
 
-// NOTE: HttpsRedirection is intentionally omitted.
-// Railway terminates TLS at the proxy layer; redirecting inside the container
-// would cause infinite redirect loops on Railway's HTTP→container path.
 app.UseStaticFiles();
 
 app.UseCors("CorsPolicy");

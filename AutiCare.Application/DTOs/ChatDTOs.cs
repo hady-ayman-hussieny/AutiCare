@@ -9,16 +9,16 @@ public class SendMessageRequest
 {
     public int ChatId { get; set; }
     public string Content { get; set; } = string.Empty;
-    /// <summary>
-    /// Optional. Defaults to "User". Use "ZoomLink" when sending a Zoom session message.
-    /// </summary>
+    
+    // Optional. Defaults to "User". Use "ZoomLink" when sending a Zoom session message.
+    
     public string MessageType { get; set; } = "User";
 }
 
-/// <summary>
-/// Request body for POST /api/chat/send-zoom-link.
-/// Specialist sends confirmed session details + Zoom link to a parent chat.
-/// </summary>
+
+// Request body for POST /api/chat/send-zoom-link.
+// Specialist sends confirmed session details + Zoom link to a parent chat.
+
 public class SendZoomLinkRequest
 {
     public int ChatId { get; set; }
@@ -31,10 +31,10 @@ public class SendZoomLinkRequest
     public string? Note { get; set; }
 }
 
-/// <summary>
+
 /// Message response — includes MessageType so clients can render Zoom-link messages differently.
 /// MessageType values: "User" | "ZoomLink" | "System"
-/// </summary>
+
 public record MessageResponse(
     int MessageId,
     int ChatId,

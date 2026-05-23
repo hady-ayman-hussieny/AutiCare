@@ -12,9 +12,9 @@ using Microsoft.Extensions.Logging;
 
 namespace AutiCare.Infrastructure.Services;
 
-/// <summary>
+
 /// Real AI client that calls the HuggingFace /predict/all endpoint.
-/// </summary>
+
 public class HuggingFaceAiClientProvider : IAiClientProvider
 {
     private readonly HttpClient _httpClient;

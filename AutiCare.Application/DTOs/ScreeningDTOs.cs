@@ -27,12 +27,12 @@ public record SubmitScreeningResponse(
     DateTime CreatedAt
 );
 
-/// <summary>
+
 /// Enhanced result response returned by GET /api/screening/results/{childId}.
 /// Existing fields (Id, ChildId, ChildName, PredictionClass, ConfidenceScore, CreatedAt)
 /// are preserved in the same positions for backward compatibility.
 /// New fields (AqScore … RepetitiveBehavior) are appended.
-/// </summary>
+
 public record ScreeningResultResponse(
     int Id,
     int ChildId,
@@ -67,10 +67,10 @@ public record ScreeningAnalyticsResponse(
 
 // ── AI Integration DTOs ─────────────────────────────────
 
-/// <summary>
+
 /// Payload sent to the HuggingFace AI model.
 /// All fields are numeric. Note: "Jauundice" has a double 'u' (API typo).
-/// </summary>
+
 public class AiScreeningPayload
 {
     public int A1 { get; set; }
