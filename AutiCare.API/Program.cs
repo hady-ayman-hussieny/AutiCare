@@ -17,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
+using static System.Net.WebRequestMethods;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -165,17 +166,16 @@ var allowedOrigins = builder.Configuration
     {
         "http://localhost:3000",
         "http://localhost:5173",
-
         "https://localhost:5173",
-
         "http://localhost:5174",
         "https://localhost:5174",
-
-        "https://auticare-main.vercel.app"
+        "https://auticare-ruddy.vercel.app",
+        "https://auticare-frontend-main.vercel.app",
+        "https://auticare-production-828c.up.railway.app"
     };
 
-       
-    
+
+
 
 
 builder.Services.AddCors(options =>
